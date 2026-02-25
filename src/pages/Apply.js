@@ -7,21 +7,13 @@ const containerVariants = {
   hidden: { opacity: 0 },
   show: {
     opacity: 1,
-    transition: {
-      staggerChildren: 0.3,
-      delayChildren: 0.2,
-    }
+    transition: { staggerChildren: 0.3, delayChildren: 0.2 }
   }
 };
 
 const itemVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.95 },
-  show: { 
-    opacity: 1, 
-    y: 0, 
-    scale: 1,
-    transition: { duration: 0.5, ease: "easeOut" }
-  }
+  show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.5, ease: "easeOut" } }
 };
 
 const Apply = () => {
@@ -30,53 +22,64 @@ const Apply = () => {
   
   const [iin, setIin] = useState('');
   const [status, setStatus] = useState('input'); // input -> scoring -> results
+  const [isSending, setIsSending] = useState(false); // Состояние отправки заявки
 
-  // Ультра-надежные аватарки банков в их фирменных цветах
   const banks = [
-    { 
-      name: 'Halyk Bank', 
-      prob: 94, 
-      color: 'bg-[#007a5a]', 
-      logo: 'https://ui-avatars.com/api/?name=Halyk+Bank&background=007a5a&color=fff&bold=true&font-size=0.4'
-    },
-    { 
-      name: 'Kaspi Bank', 
-      prob: 88, 
-      color: 'bg-[#f14635]', 
-      logo: 'https://ui-avatars.com/api/?name=Kaspi+Bank&background=f14635&color=fff&bold=true&font-size=0.4'
-    },
-    { 
-      name: 'ForteBank', 
-      prob: 82, 
-      color: 'bg-[#962364]', 
-      logo: 'https://ui-avatars.com/api/?name=Forte+Bank&background=962364&color=fff&bold=true&font-size=0.4'
-    },
-    { 
-      name: 'CenterCredit', 
-      prob: 65, 
-      color: 'bg-[#f5a623]', 
-      logo: 'https://ui-avatars.com/api/?name=Center+Credit&background=f5a623&color=fff&bold=true&font-size=0.4'
-    },
-    { 
-      name: 'Jusan Bank', 
-      prob: 25, 
-      color: 'bg-[#ff5a00]', 
-      logo: 'https://ui-avatars.com/api/?name=Jusan+Bank&background=ff5a00&color=fff&bold=true&font-size=0.4'
-    },
-    { 
-      name: 'Евразийский', 
-      prob: 15, 
-      color: 'bg-[#2d2d2d]', 
-      logo: 'https://ui-avatars.com/api/?name=Eurasian+Bank&background=2d2d2d&color=fff&bold=true&font-size=0.4'
-    },
+    { name: 'Halyk Bank', prob: 94, color: 'bg-[#007a5a]', logo: 'https://ui-avatars.com/api/?name=Halyk+Bank&background=007a5a&color=fff&bold=true&font-size=0.4' },
+    { name: 'Kaspi Bank', prob: 88, color: 'bg-[#f14635]', logo: 'https://ui-avatars.com/api/?name=Kaspi+Bank&background=f14635&color=fff&bold=true&font-size=0.4' },
+    { name: 'ForteBank', prob: 82, color: 'bg-[#962364]', logo: 'https://ui-avatars.com/api/?name=Forte+Bank&background=962364&color=fff&bold=true&font-size=0.4' },
+    { name: 'CenterCredit', prob: 65, color: 'bg-[#f5a623]', logo: 'https://ui-avatars.com/api/?name=Center+Credit&background=f5a623&color=fff&bold=true&font-size=0.4' },
+    { name: 'Jusan Bank', prob: 25, color: 'bg-[#ff5a00]', logo: 'https://ui-avatars.com/api/?name=Jusan+Bank&background=ff5a00&color=fff&bold=true&font-size=0.4' },
+    { name: 'Евразийский', prob: 15, color: 'bg-[#2d2d2d]', logo: 'https://ui-avatars.com/api/?name=Eurasian+Bank&background=2d2d2d&color=fff&bold=true&font-size=0.4' },
   ];
 
   const handleStartScoring = () => {
     if (iin.length !== 12) return;
     setStatus('scoring');
-    setTimeout(() => {
-      setStatus('results');
-    }, 3500);
+    setTimeout(() => setStatus('results'), 3500);
+  };
+
+  // ФУНКЦИЯ ОТПРАВКИ ЛИДА НА СЕРВЕР И В ТЕЛЕГРАМ
+  const handleContactBroker = async () => {
+    setIsSending(true);
+    try {
+      // Пытаемся получить данные пользователя, если он открыл сайт через Telegram
+      const tg = window.Telegram?.WebApp;
+      const tgUser = tg?.initDataUnsafe?.user;
+
+      const payload = {
+        iin,
+        amount,
+        term,
+        tgUserId: tgUser?.id || null, // ID клиента в телеге (чтобы ИИ мог ему написать)
+        tgUsername: tgUser?.username || tgUser?.first_name || 'Сайт (не Telegram)'
+      };
+
+      // Отправляем данные на наш Node.js бэкенд
+      // Относительный путь '/api/lead' сработает идеально, т.к. React и Node будут на одном сервере Railway
+      const response = await fetch('/api/lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        if (tg && tgUser) {
+          // Если мы внутри Telegram, красиво закрываем Mini App. 
+          // Клиент сразу увидит сообщение от твоего AI-бота в чате!
+          tg.close(); 
+        } else {
+          alert("Заявка успешно отправлена! Брокер свяжется с вами.");
+        }
+      } else {
+        alert("Произошла ошибка при отправке заявки на сервер.");
+      }
+    } catch (error) {
+      console.error("Ошибка сети:", error);
+      alert("Ошибка сети. Попробуйте позже.");
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
@@ -162,11 +165,7 @@ const Apply = () => {
                       
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 bg-white p-2 rounded-xl shadow-sm border border-slate-100 flex items-center justify-center group-hover:border-slate-300 transition-colors">
-                          <img 
-                            src={bank.logo} 
-                            alt={bank.name} 
-                            className="w-full h-full object-contain rounded-lg shadow-sm" 
-                          />
+                          <img src={bank.logo} alt={bank.name} className="w-full h-full object-contain rounded-lg shadow-sm" />
                         </div>
                         <span className="text-sm font-bold uppercase tracking-widest text-agatai-900">{bank.name}</span>
                       </div>
@@ -199,9 +198,23 @@ const Apply = () => {
                   <p className="text-slate-300 text-sm mb-8 leading-relaxed max-w-md">
                     Прямая подача заявок в банки с низким скорингом (красная зона) приведет к отказам и ухудшит кредитную историю. Брокеры <span className="text-white font-bold">Agatai Finance</span> знают внутренние регламенты банков и помогут получить одобрение.
                   </p>
-                  <button className="bg-white text-agatai-900 px-8 py-4 rounded-xl text-xs font-bold uppercase tracking-[0.2em] hover:bg-agatai-primary hover:text-white transition-all hover:shadow-lg active:scale-[0.98] w-full sm:w-auto">
-                    Связаться с брокером
+                  
+                  {/* ОБНОВЛЕННАЯ КНОПКА ОТПРАВКИ */}
+                  <button 
+                    onClick={handleContactBroker}
+                    disabled={isSending}
+                    className="bg-white text-agatai-900 px-8 py-4 rounded-xl text-xs font-bold uppercase tracking-[0.2em] hover:bg-agatai-primary hover:text-white transition-all hover:shadow-lg active:scale-[0.98] w-full sm:w-auto flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-wait"
+                  >
+                    {isSending ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" />
+                        Анализ...
+                      </>
+                    ) : (
+                      'Связаться с брокером'
+                    )}
                   </button>
+                  
                 </div>
               </motion.div>
 
