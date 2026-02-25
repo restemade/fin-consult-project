@@ -1,16 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 
 const Calculator = () => {
   const [amount, setAmount] = useState(5000000);
   const [term, setTerm] = useState(24);
   const [monthly, setMonthly] = useState(0);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const rate = 0.17 / 12;
+    // Реальная средняя ставка в РК: Номинал 19%
+    const rate = 0.19 / 12;
     const pay = amount * (rate * Math.pow(1 + rate, term)) / (Math.pow(1 + rate, term) - 1);
     setMonthly(Math.round(pay));
   }, [amount, term]);
+
+  const handleApply = () => {
+    // Передаем выбранные данные на страницу скоринга
+    navigate('/apply', { state: { amount, term, monthly } });
+  };
 
   return (
     <motion.div 
@@ -23,7 +31,10 @@ const Calculator = () => {
       {/* Левая часть: Ползунки */}
       <div className="md:col-span-3 p-10 md:p-14 border-b md:border-b-0 md:border-r border-slate-100">
         <h2 className="text-3xl font-black uppercase tracking-tight mb-2">Калькулятор займа</h2>
-        <p className="text-slate-400 text-sm mb-12">Базовая ставка от 17% годовых</p>
+        <div className="mb-12">
+            <p className="text-slate-500 text-sm">Официальная ставка Нацбанка РК</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-agatai-primary mt-1">Номинальная: 19% | ГЭСВ: от 21.2%*</p>
+        </div>
 
         <div className="space-y-12">
           <div className="relative">
@@ -52,7 +63,6 @@ const Calculator = () => {
 
       {/* Правая часть: Результат */}
       <div className="md:col-span-2 bg-agatai-900 text-white p-10 md:p-14 flex flex-col justify-between relative overflow-hidden">
-        {/* Декоративный градиент на фоне */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-agatai-primary/20 blur-3xl rounded-full translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
         
         <div className="relative z-10">
@@ -73,9 +83,17 @@ const Calculator = () => {
           </div>
         </div>
 
-        <button className="w-full mt-12 border border-white/20 py-4 text-xs font-bold uppercase tracking-[0.2em] hover:bg-white hover:text-agatai-900 transition-colors duration-300 relative z-10">
-          Оформить заявку
-        </button>
+        <div>
+          <button 
+            onClick={handleApply}
+            className="w-full mt-10 border border-white py-4 text-xs font-bold uppercase tracking-[0.2em] hover:bg-white hover:text-agatai-900 transition-colors duration-300 relative z-10"
+          >
+            Оформить заявку
+          </button>
+          <p className="text-[9px] text-slate-500 mt-4 text-center leading-tight">
+            *Предельная ГЭСВ по РК составляет 46%. Финальная ставка зависит от кредитной истории.
+          </p>
+        </div>
       </div>
     </motion.div>
   );

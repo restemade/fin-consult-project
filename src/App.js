@@ -6,6 +6,7 @@ import Home from './pages/Home';
 import Contacts from './pages/Contacts';
 import Calculator from './components/Calculator';
 import Auth from './components/Auth';
+import Apply from './pages/Apply'; // Импортируем новую страницу
 
 const AnimatedRoutes = () => {
   const location = useLocation();
@@ -16,6 +17,7 @@ const AnimatedRoutes = () => {
         <Route path="/calculator" element={<Calculator />} />
         <Route path="/contacts" element={<Contacts />} />
         <Route path="/auth" element={<Auth />} />
+        <Route path="/apply" element={<Apply />} /> {/* Добавленный маршрут */}
       </Routes>
     </AnimatePresence>
   );
