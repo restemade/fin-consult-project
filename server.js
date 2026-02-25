@@ -71,7 +71,7 @@ bot.on('text', async (ctx) => {
 app.use(express.static(path.join(__dirname, 'build')));
 
 // Все остальные пути, не относящиеся к API, отдаются React-роутеру
-app.get('*', (req, res) => {
+app.get(/.*/, (req, res) => {
   res.sendFile(path.join(__dirname, 'build', 'index.html'));
 });
 
@@ -79,4 +79,5 @@ bot.launch();
 app.listen(port, () => console.log(`🚀 Full-Stack сервер Agatai Finance запущен на порту ${port}`));
 
 process.once('SIGINT', () => bot.stop('SIGINT'));
+
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
