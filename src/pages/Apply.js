@@ -25,12 +25,12 @@ const Apply = () => {
   const [isSending, setIsSending] = useState(false); // Состояние отправки заявки
 
   const banks = [
-    { name: 'Halyk Bank', prob: 94, color: 'bg-[#007a5a]', logo: 'https://ui-avatars.com/api/?name=Halyk+Bank&background=007a5a&color=fff&bold=true&font-size=0.4' },
-    { name: 'Kaspi Bank', prob: 88, color: 'bg-[#f14635]', logo: 'https://ui-avatars.com/api/?name=Kaspi+Bank&background=f14635&color=fff&bold=true&font-size=0.4' },
-    { name: 'ForteBank', prob: 82, color: 'bg-[#962364]', logo: 'https://ui-avatars.com/api/?name=Forte+Bank&background=962364&color=fff&bold=true&font-size=0.4' },
-    { name: 'CenterCredit', prob: 65, color: 'bg-[#f5a623]', logo: 'https://ui-avatars.com/api/?name=Center+Credit&background=f5a623&color=fff&bold=true&font-size=0.4' },
-    { name: 'Jusan Bank', prob: 25, color: 'bg-[#ff5a00]', logo: 'https://ui-avatars.com/api/?name=Jusan+Bank&background=ff5a00&color=fff&bold=true&font-size=0.4' },
-    { name: 'Евразийский', prob: 15, color: 'bg-[#2d2d2d]', logo: 'https://ui-avatars.com/api/?name=Eurasian+Bank&background=2d2d2d&color=fff&bold=true&font-size=0.4' },
+    { name: 'Halyk Bank', prob: 94, color: 'bg-[#007a5a]', char: 'H' },
+    { name: 'Kaspi Bank', prob: 88, color: 'bg-[#f14635]', char: 'K' },
+    { name: 'ForteBank', prob: 82, color: 'bg-[#962364]', char: 'F' },
+    { name: 'CenterCredit', prob: 65, color: 'bg-[#f5a623]', char: 'C' },
+    { name: 'Jusan Bank', prob: 25, color: 'bg-[#ff5a00]', char: 'J' },
+    { name: 'Евразийский', prob: 15, color: 'bg-[#2d2d2d]', char: 'E' },
   ];
 
   const handleStartScoring = () => {
@@ -43,7 +43,6 @@ const Apply = () => {
   const handleContactBroker = async () => {
     setIsSending(true);
     try {
-      // Пытаемся получить данные пользователя, если он открыл сайт через Telegram
       const tg = window.Telegram?.WebApp;
       const tgUser = tg?.initDataUnsafe?.user;
 
@@ -51,12 +50,10 @@ const Apply = () => {
         iin,
         amount,
         term,
-        tgUserId: tgUser?.id || null, // ID клиента в телеге (чтобы ИИ мог ему написать)
+        tgUserId: tgUser?.id || null,
         tgUsername: tgUser?.username || tgUser?.first_name || 'Сайт (не Telegram)'
       };
 
-      // Отправляем данные на наш Node.js бэкенд
-      // Относительный путь '/api/lead' сработает идеально, т.к. React и Node будут на одном сервере Railway
       const response = await fetch('/api/lead', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -65,11 +62,9 @@ const Apply = () => {
 
       if (response.ok) {
         if (tg && tgUser) {
-          // Если мы внутри Telegram, красиво закрываем Mini App. 
-          // Клиент сразу увидит сообщение от твоего AI-бота в чате!
           tg.close(); 
         } else {
-          alert("Заявка успешно отправлена! Брокер свяжется с вами.");
+          alert("Заявка успешно отправлена! Старший брокер Аслан свяжется с вами.");
         }
       } else {
         alert("Произошла ошибка при отправке заявки на сервер.");
@@ -83,7 +78,12 @@ const Apply = () => {
   };
 
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="max-w-2xl mx-auto my-10 px-4 md:px-0">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }} 
+      animate={{ opacity: 1, y: 0 }} 
+      exit={{ opacity: 0 }} 
+      className="max-w-2xl mx-auto my-10 px-4 md:px-0"
+    >
       
       <Link to="/calculator" className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-agatai-900 transition-colors mb-8">
         <ArrowLeft size={16} /> Назад к калькулятору
@@ -162,14 +162,13 @@ const Apply = () => {
                 {banks.map((bank, i) => (
                   <motion.div key={i} variants={itemVariants} className="relative group">
                     <div className="flex justify-between items-center mb-3 relative z-10">
-                      
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-white p-2 rounded-xl shadow-sm border border-slate-100 flex items-center justify-center group-hover:border-slate-300 transition-colors">
-                          <img src={bank.logo} alt={bank.name} className="w-full h-full object-contain rounded-lg shadow-sm" />
+                        {/* ЛОГОТИПЫ: Квадраты с буквами, так как внешние ссылки могут тупить */}
+                        <div className={`w-12 h-12 rounded-xl shadow-sm flex items-center justify-center text-white font-black text-xl ${bank.color}`}>
+                          {bank.char}
                         </div>
                         <span className="text-sm font-bold uppercase tracking-widest text-agatai-900">{bank.name}</span>
                       </div>
-
                       <span className={`text-2xl font-black tracking-tight ${bank.prob > 50 ? 'text-emerald-600' : 'text-rose-500'}`}>
                         {bank.prob}%
                       </span>
@@ -194,12 +193,11 @@ const Apply = () => {
                     <AlertTriangle size={24} strokeWidth={1.5} />
                     <span className="text-xs font-bold uppercase tracking-widest">Важно к прочтению</span>
                   </div>
-                  <h4 className="text-xl font-black uppercase tracking-tight mb-3 leading-none">Повысьте шансы до 99%</h4>
+                  <h4 className="text-xl font-black uppercase tracking-tight mb-3 leading-none">Нужна помощь Аслана?</h4>
                   <p className="text-slate-300 text-sm mb-8 leading-relaxed max-w-md">
-                    Прямая подача заявок в банки с низким скорингом (красная зона) приведет к отказам и ухудшит кредитную историю. Брокеры <span className="text-white font-bold">Agatai Finance</span> знают внутренние регламенты банков и помогут получить одобрение.
+                    Прямая подача заявок в банки с низким скорингом приведет к отказам. Старший брокер <span className="text-white font-bold">Аслан</span> поможет подготовить ваш профиль для 99% одобрения.
                   </p>
                   
-                  {/* ОБНОВЛЕННАЯ КНОПКА ОТПРАВКИ */}
                   <button 
                     onClick={handleContactBroker}
                     disabled={isSending}
@@ -208,13 +206,12 @@ const Apply = () => {
                     {isSending ? (
                       <>
                         <Loader2 size={16} className="animate-spin" />
-                        Анализ...
+                        Отправка...
                       </>
                     ) : (
-                      'Связаться с брокером'
+                      'Связаться с Асланом'
                     )}
                   </button>
-                  
                 </div>
               </motion.div>
 
